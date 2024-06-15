@@ -18,11 +18,13 @@ type Props = {
   textColor?: string;
   chatFeedbackStatus?: boolean;
   fontSize?: number;
+  feedbackColor?: string;
 };
 
 const defaultBackgroundColor = '#f7f8ff';
 const defaultTextColor = '#303235';
 const defaultFontSize = 16;
+const defaultFeedbackColor = '#3B81F6';
 
 Marked.setOptions({ isNoP: true });
 
@@ -31,12 +33,15 @@ export const BotBubble = (props: Props) => {
   const [rating, setRating] = createSignal('');
   const [feedbackId, setFeedbackId] = createSignal('');
   const [showFeedbackContentDialog, setShowFeedbackContentModal] = createSignal(false);
+  const [copiedMessage, setCopiedMessage] = createSignal(false);
+  const [thumbsUpColor, setThumbsUpColor] = createSignal(props.feedbackColor ?? defaultFeedbackColor); // default color
+  const [thumbsDownColor, setThumbsDownColor] = createSignal(props.feedbackColor ?? defaultFeedbackColor); // default color
 
   const downloadFile = async (fileAnnotation: any) => {
     try {
       const response = await sendFileDownloadQuery({
         apiHost: props.apiHost,
-        body: { question: '', history: [], fileName: fileAnnotation.fileName },
+        body: { question: '', fileName: fileAnnotation.fileName },
       });
       const blob = new Blob([response.data]);
       const downloadUrl = window.URL.createObjectURL(blob);
@@ -55,6 +60,10 @@ export const BotBubble = (props: Props) => {
     try {
       const text = botMessageEl ? botMessageEl?.textContent : '';
       await navigator.clipboard.writeText(text || '');
+      setCopiedMessage(true);
+      setTimeout(() => {
+        setCopiedMessage(false);
+      }, 2000); // Hide the message after 2 seconds
     } catch (error) {
       console.error('Error copying to clipboard:', error);
     }
@@ -82,6 +91,8 @@ export const BotBubble = (props: Props) => {
         setRating('THUMBS_UP');
         setFeedbackId(id);
         setShowFeedbackContentModal(true);
+        // update the thumbs up color state
+        setThumbsUpColor('#006400');
       }
     }
   };
@@ -108,6 +119,8 @@ export const BotBubble = (props: Props) => {
         setRating('THUMBS_DOWN');
         setFeedbackId(id);
         setShowFeedbackContentModal(true);
+        // update the thumbs down color state
+        setThumbsDownColor('#8B0000');
       }
     }
   };
@@ -155,45 +168,59 @@ export const BotBubble = (props: Props) => {
   });
 
   return (
-    <div class="flex flex-col justify-start mb-2 items-start host-container" style={{ 'margin-right': '50px' }}>
-      <Show when={props.showAvatar}>
-        <Avatar initialAvatarSrc={props.avatarSrc} />
-      </Show>
-      {props.message.message && (
-        <span
-          ref={botMessageEl}
-          class="px-4 py-2 ml-2 max-w-full chatbot-host-bubble prose"
-          data-testid="host-bubble"
-          style={{
-            'background-color': props.backgroundColor ?? defaultBackgroundColor,
-            color: props.textColor ?? defaultTextColor,
-            'border-radius': '6px',
-            'font-size': props.fontSize ? `${props.fontSize}px` : `${defaultFontSize}`,
-          }}
-        />
-      )}
-      {props.chatFeedbackStatus && props.message.messageId && (
-        <>
-          <div class="flex items-center px-2">
-            <CopyToClipboardButton onClick={() => copyMessageToClipboard()} />
-            {rating() === '' || rating() === 'THUMBS_UP' ? (
-              <ThumbsUpButton isDisabled={rating() === 'THUMBS_UP'} rating={rating()} onClick={onThumbsUpClick} />
-            ) : null}
-            {rating() === '' || rating() === 'THUMBS_DOWN' ? (
-              <ThumbsDownButton isDisabled={rating() === 'THUMBS_DOWN'} rating={rating()} onClick={onThumbsDownClick} />
-            ) : null}
-          </div>
-          <Show when={showFeedbackContentDialog()}>
-            <FeedbackContentDialog
-              isOpen={showFeedbackContentDialog()}
-              onClose={() => setShowFeedbackContentModal(false)}
-              onSubmit={submitFeedbackContent}
-              backgroundColor={props.backgroundColor}
-              textColor={props.textColor}
-            />
-          </Show>
-        </>
-      )}
+    <div>
+      <div class="flex flex-row justify-start mb-2 items-start host-container" style={{ 'margin-right': '50px' }}>
+        <Show when={props.showAvatar}>
+          <Avatar initialAvatarSrc={props.avatarSrc} />
+        </Show>
+        {props.message.message && (
+          <span
+            ref={botMessageEl}
+            class="px-4 py-2 ml-2 max-w-full chatbot-host-bubble prose"
+            data-testid="host-bubble"
+            style={{
+              'background-color': props.backgroundColor ?? defaultBackgroundColor,
+              color: props.textColor ?? defaultTextColor,
+              'border-radius': '6px',
+              'font-size': props.fontSize ? `${props.fontSize}px` : `${defaultFontSize}px`,
+            }}
+          />
+        )}
+      </div>
+      <div>
+        {props.chatFeedbackStatus && props.message.messageId && (
+          <>
+            <div class={`flex items-center px-2 pb-2 ${props.showAvatar ? 'ml-10' : ''}`}>
+              <CopyToClipboardButton feedbackColor={props.feedbackColor} onClick={() => copyMessageToClipboard()} />
+              <Show when={copiedMessage()}>
+                <div class="copied-message" style={{ color: props.feedbackColor ?? defaultFeedbackColor }}>
+                  Copied!
+                </div>
+              </Show>
+              {rating() === '' || rating() === 'THUMBS_UP' ? (
+                <ThumbsUpButton feedbackColor={thumbsUpColor()} isDisabled={rating() === 'THUMBS_UP'} rating={rating()} onClick={onThumbsUpClick} />
+              ) : null}
+              {rating() === '' || rating() === 'THUMBS_DOWN' ? (
+                <ThumbsDownButton
+                  feedbackColor={thumbsDownColor()}
+                  isDisabled={rating() === 'THUMBS_DOWN'}
+                  rating={rating()}
+                  onClick={onThumbsDownClick}
+                />
+              ) : null}
+            </div>
+            <Show when={showFeedbackContentDialog()}>
+              <FeedbackContentDialog
+                isOpen={showFeedbackContentDialog()}
+                onClose={() => setShowFeedbackContentModal(false)}
+                onSubmit={submitFeedbackContent}
+                backgroundColor={props.backgroundColor}
+                textColor={props.textColor}
+              />
+            </Show>
+          </>
+        )}
+      </div>
     </div>
   );
 };

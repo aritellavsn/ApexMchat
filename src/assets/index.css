@@ -7,13 +7,13 @@
   --chatbot-container-bg-color: transparent;
   --chatbot-container-font-family: 'Open Sans';
 
-  --chatbot-button-bg-color: #AD57F5;
+  --chatbot-button-bg-color: #0042da;
   --chatbot-button-color: #ffffff;
 
   --chatbot-host-bubble-bg-color: #f7f8ff;
   --chatbot-host-bubble-color: #303235;
 
-  --chatbot-guest-bubble-bg-color: #AD57F5;
+  --chatbot-guest-bubble-bg-color: #3b81f6;
   --chatbot-guest-bubble-color: #ffffff;
 
   --chatbot-input-bg-color: #ffffff;
@@ -58,7 +58,7 @@ pre {
   color: darkorange;
 }
 .boolean {
-  color: #AD57F5;
+  color: blue;
 }
 .null {
   color: magenta;
@@ -186,15 +186,15 @@ textarea {
 
 .chatbot-button {
   color: var(--chatbot-button-color);
-  border: 1px solid #AD57F5;
-  background-color: #AD57F5;
+  background-color: #0042da;
+  border: 1px solid #0042da;
   border-radius: var(--chatbot-border-radius);
 }
 
 .chatbot-button.selectable {
   color: var(--chatbot-host-bubble-color);
   background-color: #f7f8ff;
-  border: 1px solid #AD57F5;
+  border: 1px solid #0042da;
 }
 
 .chatbot-host-bubble {
@@ -216,7 +216,7 @@ textarea {
 
 .chatbot-guest-bubble {
   color: var(--chatbot-guest-bubble-color);
-  background-color: #dd76f4;
+  background-color: #3b81f6;
   border-radius: 6px;
 }
 
@@ -242,19 +242,19 @@ textarea {
 }
 
 .ping span {
-  background-color: #AD57F5;
+  background-color: #0042da;
 }
 
 .rating-icon-container svg {
   width: 42px;
   height: 42px;
-  stroke: #AD57F5;
+  stroke: #0042da;
   fill: #f7f8ff;
   transition: fill 100ms ease-out;
 }
 
 .rating-icon-container.selected svg {
-  fill: #AD57F5;
+  fill: #0042da;
 }
 
 .rating-icon-container:hover svg {
@@ -266,12 +266,12 @@ textarea {
 }
 
 .upload-progress-bar {
-  background-color: #AD57F5;
+  background-color: #0042da;
   border-radius: var(--chatbot-border-radius);
 }
 
 .total-files-indicator {
-  background-color: #AD57F5;
+  background-color: #0042da;
   color: var(--chatbot-button-color);
   font-size: 10px;
 }
@@ -281,7 +281,7 @@ textarea {
 }
 
 .chatbot-upload-input.dragging-over {
-  border-color: #AD57F5;
+  border-color: #0042da;
 }
 
 .secondary-button {
@@ -429,9 +429,44 @@ textarea {
   align-items: center;
 }
 
-input {
+input,
+textarea {
   background-color: transparent;
   border: none;
   padding: 10px 10px;
   font-family: 'Poppins', sans-serif;
+}
+@media (max-width: 640px) {
+  div[part='bot'] {
+    width: 100% !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    max-width: unset !important;
+    max-height: unset !important;
+    height: 100% !important;
+    overflow: auto; 
+  }
+
+    div[part='button'], div[class='flex flex-row items-center w-full h-[50px] absolute top-0 left-0 z-10'], .chatbot-container, .rounded-lg {
+    border-radius: 0px !important;
+  }
+
+button {
+  cursor: default !important;
+}
+
+}
+.tooltip {
+  position: fixed;
+  background: var(--tooltip-background-color, black);
+  color: var(--tooltip-text-color, white);
+  padding: 5px 10px;
+  border-radius: 5px;
+  z-index: 42424242;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: calc(100vw - 20px);
+  font-size: var(--tooltip-font-size, 12px);
+  transition: opacity 0.3s ease-in-out;
 }
