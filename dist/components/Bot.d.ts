@@ -1,10 +1,6 @@
-import { BotMessageTheme, FooterTheme, TextInputTheme, UserMessageTheme, FeedbackTheme } from '@/features/bubble/types';
+import { BotMessageTheme, TextInputTheme, UserMessageTheme } from '@/features/bubble/types';
 export type FileEvent<T = EventTarget> = {
     target: T;
-};
-export type FormEvent<T = EventTarget> = {
-    preventDefault: () => void;
-    currentTarget: T;
 };
 type ImageUploadConstraits = {
     fileTypes: string[];
@@ -23,7 +19,7 @@ type FilePreview = {
     preview: string;
     type: string;
 };
-type messageType = 'apiMessage' | 'userMessage' | 'usermessagewaiting' | 'leadCaptureMessage';
+type messageType = 'apiMessage' | 'userMessage' | 'usermessagewaiting';
 export type FileUpload = Omit<FilePreview, 'preview'>;
 export type MessageType = {
     messageId?: string;
@@ -40,11 +36,9 @@ export type BotProps = {
     apiHost?: string;
     chatflowConfig?: Record<string, unknown>;
     welcomeMessage?: string;
-    errorMessage?: string;
     botMessage?: BotMessageTheme;
     userMessage?: UserMessageTheme;
     textInput?: TextInputTheme;
-    feedback?: FeedbackTheme;
     poweredByTextColor?: string;
     badgeBackgroundColor?: string;
     bubbleBackgroundColor?: string;
@@ -54,16 +48,7 @@ export type BotProps = {
     titleAvatarSrc?: string;
     fontSize?: number;
     isFullPage?: boolean;
-    footer?: FooterTheme;
     observersConfig?: observersConfigType;
-};
-export type LeadsConfig = {
-    status: boolean;
-    title?: string;
-    name?: boolean;
-    email?: boolean;
-    phone?: boolean;
-    successMessage?: string;
 };
 export declare const Bot: (botProps: BotProps & {
     class?: string;

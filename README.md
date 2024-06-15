@@ -30,7 +30,7 @@ yarn build
 
 ```html
 <script type="module">
-  import Chatbot from 'https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js';
+  import Chatbot from 'https://cdn.jsdelivr.net/gh/aritellavsn/ApexMchat/dist/web.js';
   Chatbot.init({
     chatflowid: '<chatflowid>',
     apiHost: 'http://localhost:3000',
@@ -77,7 +77,7 @@ You can also customize chatbot with different configuration
 
 ```html
 <script type="module">
-  import Chatbot from 'https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js';
+  import Chatbot from 'https://cdn.jsdelivr.net/gh/aritellavsn/ApexMchat/dist/web.js';
   Chatbot.init({
     chatflowid: '91e9c803-5169-4db9-8207-3c0915d71c5f',
     apiHost: 'http://localhost:3000',
@@ -104,28 +104,20 @@ You can also customize chatbot with different configuration
         backgroundColor: '#3B81F6',
         right: 20,
         bottom: 20,
-        size: 48, // small | medium | large | number
-        dragAndDrop: true,
+        size: 'medium',
         iconColor: 'white',
         customIconSrc: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/google-messages.svg',
       },
-      tooltip: {
-        showTooltip: true,
-        tooltipMessage: 'Hi There 👋!',
-        tooltipBackgroundColor: 'black',
-        tooltipTextColor: 'white',
-        tooltipFontSize: 16,
-      },
       chatWindow: {
-        showTitle: true,
+        showTitle: true, // show/hide the title bar
         title: 'Flowise Bot',
         titleAvatarSrc: 'https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/google-messages.svg',
         welcomeMessage: 'Hello! This is custom welcome message',
-        errorMessage: 'This is a custom error message',
         backgroundColor: '#ffffff',
         height: 700,
         width: 400,
         fontSize: 16,
+        poweredByTextColor: '#303235',
         botMessage: {
           backgroundColor: '#f7f8ff',
           textColor: '#303235',
@@ -143,18 +135,6 @@ You can also customize chatbot with different configuration
           backgroundColor: '#ffffff',
           textColor: '#303235',
           sendButtonColor: '#3B81F6',
-          maxChars: 50,
-          maxCharsWarningMessage: 'You exceeded the characters limit. Please input less than 50 characters.',
-          autoFocus: true, // If not used, autofocus is disabled on mobile and enabled on desktop. true enables it on both, false disables it on both.
-        },
-        feedback: {
-          color: '#303235',
-        },
-        footer: {
-          textColor: '#303235',
-          text: 'Powered by',
-          company: 'Flowise',
-          companyLink: 'https://flowiseai.com',
         },
       },
     },

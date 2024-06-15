@@ -1,12 +1,12 @@
-import { FileUpload } from '@/components/Bot';
+import { FileUpload, MessageType } from '@/components/Bot';
 export type IncomingInput = {
     question: string;
+    history: MessageType[];
     uploads?: FileUpload[];
     overrideConfig?: Record<string, unknown>;
     socketIOClientId?: string;
     chatId?: string;
     fileName?: string;
-    leadEmail?: string;
 };
 export type MessageRequest = {
     chatflowid?: string;
@@ -30,17 +30,6 @@ export type UpdateFeedbackRequest = {
     apiHost?: string;
     body?: Partial<FeedbackInput>;
 };
-export type LeadCaptureInput = {
-    chatflowid: string;
-    chatId: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-};
-export type LeadCaptureRequest = {
-    apiHost?: string;
-    body: Partial<LeadCaptureInput>;
-};
 export declare const sendFeedbackQuery: ({ chatflowid, apiHost, body }: CreateFeedbackRequest) => Promise<{
     data?: unknown;
     error?: Error | undefined;
@@ -62,10 +51,6 @@ export declare const isStreamAvailableQuery: ({ chatflowid, apiHost }: MessageRe
     error?: Error | undefined;
 }>;
 export declare const sendFileDownloadQuery: ({ apiHost, body }: MessageRequest) => Promise<{
-    data?: any;
-    error?: Error | undefined;
-}>;
-export declare const addLeadQuery: ({ apiHost, body }: LeadCaptureRequest) => Promise<{
     data?: any;
     error?: Error | undefined;
 }>;

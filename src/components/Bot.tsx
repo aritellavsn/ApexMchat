@@ -7,7 +7,7 @@ import { BotBubble } from './bubbles/BotBubble';
 import { LoadingBubble } from './bubbles/LoadingBubble';
 import { SourceBubble } from './bubbles/SourceBubble';
 import { StarterPromptBubble } from './bubbles/StarterPromptBubble';
-import { BotMessageTheme, FooterTheme, TextInputTheme, UserMessageTheme, FeedbackTheme } from '@/features/bubble/types';
+import { BotMessageTheme, TextInputTheme, UserMessageTheme } from '@/features/bubble/types';
 import { Badge } from './Badge';
 import socketIOClient from 'socket.io-client';
 import { Popup } from '@/features/popup';
@@ -16,16 +16,9 @@ import { DeleteButton, SendButton } from '@/components/buttons/SendButton';
 import { CircleDotIcon, TrashIcon } from './icons';
 import { CancelButton } from './buttons/CancelButton';
 import { cancelAudioRecording, startAudioRecording, stopAudioRecording } from '@/utils/audioRecording';
-import { LeadCaptureBubble } from '@/components/bubbles/LeadCaptureBubble';
-import { removeLocalStorageChatHistory, getLocalStorageChatflow, setLocalStorageChatflow } from '@/utils';
 
 export type FileEvent<T = EventTarget> = {
   target: T;
-};
-
-export type FormEvent<T = EventTarget> = {
-  preventDefault: () => void;
-  currentTarget: T;
 };
 
 type ImageUploadConstraits = {
@@ -49,7 +42,7 @@ type FilePreview = {
   type: string;
 };
 
-type messageType = 'apiMessage' | 'userMessage' | 'usermessagewaiting' | 'leadCaptureMessage';
+type messageType = 'apiMessage' | 'userMessage' | 'usermessagewaiting';
 
 export type FileUpload = Omit<FilePreview, 'preview'>;
 
@@ -70,11 +63,9 @@ export type BotProps = {
   apiHost?: string;
   chatflowConfig?: Record<string, unknown>;
   welcomeMessage?: string;
-  errorMessage?: string;
   botMessage?: BotMessageTheme;
   userMessage?: UserMessageTheme;
   textInput?: TextInputTheme;
-  feedback?: FeedbackTheme;
   poweredByTextColor?: string;
   badgeBackgroundColor?: string;
   bubbleBackgroundColor?: string;
@@ -84,17 +75,7 @@ export type BotProps = {
   titleAvatarSrc?: string;
   fontSize?: number;
   isFullPage?: boolean;
-  footer?: FooterTheme;
   observersConfig?: observersConfigType;
-};
-
-export type LeadsConfig = {
-  status: boolean;
-  title?: string;
-  name?: boolean;
-  email?: boolean;
-  phone?: boolean;
-  successMessage?: string;
 };
 
 const defaultWelcomeMessage = 'Hi there! How can I help?';
@@ -201,15 +182,10 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
   );
   const [socketIOClientId, setSocketIOClientId] = createSignal('');
   const [isChatFlowAvailableToStream, setIsChatFlowAvailableToStream] = createSignal(false);
-  const [chatId, setChatId] = createSignal(
-    (props.chatflowConfig?.vars as any)?.customerId ? `${(props.chatflowConfig?.vars as any).customerId.toString()}+${uuidv4()}` : uuidv4(),
-  );
+  const [chatId, setChatId] = createSignal(uuidv4());
   const [starterPrompts, setStarterPrompts] = createSignal<string[]>([], { equals: false });
   const [chatFeedbackStatus, setChatFeedbackStatus] = createSignal<boolean>(false);
   const [uploadsConfig, setUploadsConfig] = createSignal<UploadsConfig>();
-  const [leadsConfig, setLeadsConfig] = createSignal<LeadsConfig>();
-  const [isLeadSaved, setIsLeadSaved] = createSignal(false);
-  const [leadEmail, setLeadEmail] = createSignal('');
 
   // drag & drop file input
   // TODO: fix this type
@@ -260,7 +236,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
    * Add each chat message into localStorage
    */
   const addChatMessage = (allMessage: MessageType[]) => {
-    setLocalStorageChatflow(props.chatflowid, chatId(), { chatHistory: allMessage });
+    localStorage.setItem(`${props.chatflowid}_EXTERNAL`, JSON.stringify({ chatId: chatId(), chatHistory: allMessage }));
   };
 
   const updateLastMessage = (text: string, messageId: string, sourceDocuments: any = null, fileAnnotations: any = null) => {
@@ -298,7 +274,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
   // Handle errors
   const handleError = (message = 'Oops! There seems to be an error. Please try again.') => {
     setMessages((prevMessages) => {
-      const messages: MessageType[] = [...prevMessages, { message: props.errorMessage || message, type: 'apiMessage' }];
+      const messages: MessageType[] = [...prevMessages, { message, type: 'apiMessage' }];
       addChatMessage(messages);
       return messages;
     });
@@ -325,6 +301,10 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
     setLoading(true);
     scrollToBottom();
 
+    // Send user question and history to API
+    const welcomeMessage = props.welcomeMessage ?? defaultWelcomeMessage;
+    const messageList = messages().filter((msg) => msg.message !== welcomeMessage);
+
     const urls = previews().map((item) => {
       return {
         data: item.data,
@@ -344,14 +324,13 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
 
     const body: IncomingInput = {
       question: value,
+      history: messageList,
       chatId: chatId(),
     };
 
     if (urls && urls.length > 0) body.uploads = urls;
 
     if (props.chatflowConfig) body.overrideConfig = props.chatflowConfig;
-
-    if (leadEmail()) body.leadEmail = leadEmail();
 
     if (isChatFlowAvailableToStream()) {
       body.socketIOClientId = socketIOClientId();
@@ -416,35 +395,23 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
     if (result.error) {
       const error = result.error;
       console.error(error);
-      if (typeof error === 'object') {
-        handleError(`Error: ${error?.message.replaceAll('Error:', ' ')}`);
-        return;
-      }
-      if (typeof error === 'string') {
-        handleError(error);
-        return;
-      }
-      handleError();
+      const err: any = error;
+      const errorData = typeof err === 'string' ? err : err.response.data || `${err.response.status}: ${err.response.statusText}`;
+      handleError(errorData);
       return;
     }
   };
 
   const clearChat = () => {
     try {
-      removeLocalStorageChatHistory(props.chatflowid);
-      setChatId(
-        (props.chatflowConfig?.vars as any)?.customerId ? `${(props.chatflowConfig?.vars as any).customerId.toString()}+${uuidv4()}` : uuidv4(),
-      );
-      const messages: MessageType[] = [
+      localStorage.removeItem(`${props.chatflowid}_EXTERNAL`);
+      setChatId(uuidv4());
+      setMessages([
         {
           message: props.welcomeMessage ?? defaultWelcomeMessage,
           type: 'apiMessage',
         },
-      ];
-      if (leadsConfig()?.status && !getLocalStorageChatflow(props.chatflowid)?.lead) {
-        messages.push({ message: '', type: 'leadCaptureMessage' });
-      }
-      setMessages(messages);
+      ]);
     } catch (error: any) {
       const errorData = error.response.data || `${error.response.status}: ${error.response.statusText}`;
       console.error(`error: ${errorData}`);
@@ -453,13 +420,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
 
   // Auto scroll chat to bottom
   createEffect(() => {
-    if (messages()) {
-      if (messages().length > 1) {
-        setTimeout(() => {
-          chatContainer?.scrollTo(0, chatContainer.scrollHeight);
-        }, 400);
-      }
-    }
+    if (messages()) scrollToBottom();
   });
 
   createEffect(() => {
@@ -468,31 +429,22 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
 
   // eslint-disable-next-line solid/reactivity
   createEffect(async () => {
-    const chatMessage = getLocalStorageChatflow(props.chatflowid);
-    if (chatMessage && Object.keys(chatMessage).length) {
-      if (chatMessage.chatId) setChatId(chatMessage.chatId);
-      const savedLead = chatMessage.lead;
-      if (savedLead) {
-        setIsLeadSaved(!!savedLead);
-        setLeadEmail(savedLead.email);
-      }
-      const loadedMessages: MessageType[] =
-        chatMessage?.chatHistory?.length > 0
-          ? chatMessage.chatHistory?.map((message: MessageType) => {
-              const chatHistory: MessageType = {
-                messageId: message?.messageId,
-                message: message.message,
-                type: message.type,
-              };
-              if (message.sourceDocuments) chatHistory.sourceDocuments = message.sourceDocuments;
-              if (message.fileAnnotations) chatHistory.fileAnnotations = message.fileAnnotations;
-              if (message.fileUploads) chatHistory.fileUploads = message.fileUploads;
-              return chatHistory;
-            })
-          : [{ message: props.welcomeMessage ?? defaultWelcomeMessage, type: 'apiMessage' }];
-
-      const filteredMessages = loadedMessages.filter((message) => message.message !== '' && message.type !== 'leadCaptureMessage');
-      setMessages([...filteredMessages]);
+    const chatMessage = localStorage.getItem(`${props.chatflowid}_EXTERNAL`);
+    if (chatMessage) {
+      const objChatMessage = JSON.parse(chatMessage);
+      setChatId(objChatMessage.chatId);
+      const loadedMessages = objChatMessage.chatHistory.map((message: MessageType) => {
+        const chatHistory: MessageType = {
+          messageId: message?.messageId,
+          message: message.message,
+          type: message.type,
+        };
+        if (message.sourceDocuments) chatHistory.sourceDocuments = message.sourceDocuments;
+        if (message.fileAnnotations) chatHistory.fileAnnotations = message.fileAnnotations;
+        if (message.fileUploads) chatHistory.fileUploads = message.fileUploads;
+        return chatHistory;
+      });
+      setMessages([...loadedMessages]);
     }
 
     // Determine if particular chatflow is available for streaming
@@ -518,7 +470,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
         Object.getOwnPropertyNames(chatbotConfig.starterPrompts).forEach((key) => {
           prompts.push(chatbotConfig.starterPrompts[key].prompt);
         });
-        setStarterPrompts(prompts.filter((prompt) => prompt !== ''));
+        setStarterPrompts(prompts);
       }
       if (chatbotConfig.chatFeedback) {
         const chatFeedbackStatus = chatbotConfig.chatFeedback.status;
@@ -527,18 +479,12 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
       if (chatbotConfig.uploads) {
         setUploadsConfig(chatbotConfig.uploads);
       }
-      if (chatbotConfig.leads) {
-        setLeadsConfig(chatbotConfig.leads);
-        if (chatbotConfig.leads?.status && !getLocalStorageChatflow(props.chatflowid)?.lead) {
-          setMessages((prevMessages) => [...prevMessages, { message: '', type: 'leadCaptureMessage' }]);
-        }
-      }
     }
 
     const socket = socketIOClient(props.apiHost as string);
 
     socket.on('connect', () => {
-      setSocketIOClientId(socket.id);
+      setSocketIOClientId(socket.id ?? 'default-id');
     });
 
     socket.on('start', () => {
@@ -590,14 +536,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
   };
 
   const addRecordingToPreviews = (blob: Blob) => {
-    let mimeType = '';
-    const pos = blob.type.indexOf(';');
-    if (pos === -1) {
-      mimeType = blob.type;
-    } else {
-      mimeType = blob.type.substring(0, pos);
-    }
-
+    const mimeType = blob.type.substring(0, blob.type.indexOf(';'));
     // read blob and add to previews
     const reader = new FileReader();
     reader.readAsDataURL(blob);
@@ -607,7 +546,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
         data: base64data,
         preview: '../assets/wave-sound.jpg',
         type: 'audio',
-        name: `audio_${Date.now()}.wav`,
+        name: 'audio.wav',
         mime: mimeType,
       };
       setPreviews((prevPreviews) => [...prevPreviews, upload]);
@@ -796,6 +735,7 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
       };
     }),
   );
+
   return (
     <>
       <div
@@ -894,29 +834,10 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
                         apiHost={props.apiHost}
                         backgroundColor={props.botMessage?.backgroundColor}
                         textColor={props.botMessage?.textColor}
-                        feedbackColor={props.feedback?.color}
                         showAvatar={props.botMessage?.showAvatar}
                         avatarSrc={props.botMessage?.avatarSrc}
                         chatFeedbackStatus={chatFeedbackStatus()}
                         fontSize={props.fontSize}
-                      />
-                    )}
-                    {message.type === 'leadCaptureMessage' && leadsConfig()?.status && !getLocalStorageChatflow(props.chatflowid)?.lead && (
-                      <LeadCaptureBubble
-                        message={message}
-                        chatflowid={props.chatflowid}
-                        chatId={chatId()}
-                        apiHost={props.apiHost}
-                        backgroundColor={props.botMessage?.backgroundColor}
-                        textColor={props.botMessage?.textColor}
-                        fontSize={props.fontSize}
-                        showAvatar={props.botMessage?.showAvatar}
-                        avatarSrc={props.botMessage?.avatarSrc}
-                        leadsConfig={leadsConfig()}
-                        sendButtonColor={props.textInput?.sendButtonColor}
-                        isLeadSaved={isLeadSaved()}
-                        setIsLeadSaved={setIsLeadSaved}
-                        setLeadEmail={setLeadEmail}
                       />
                     )}
                     {message.type === 'userMessage' && loading() && index() === messages().length - 1 && <LoadingBubble />}
@@ -1047,11 +968,8 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
                 textColor={props.textInput?.textColor}
                 placeholder={props.textInput?.placeholder}
                 sendButtonColor={props.textInput?.sendButtonColor}
-                maxChars={props.textInput?.maxChars}
-                maxCharsWarningMessage={props.textInput?.maxCharsWarningMessage}
-                autoFocus={props.textInput?.autoFocus}
                 fontSize={props.fontSize}
-                disabled={loading() || (leadsConfig()?.status && !isLeadSaved())}
+                disabled={loading()}
                 defaultValue={userInput()}
                 onSubmit={handleSubmit}
                 uploadsConfig={uploadsConfig()}
@@ -1061,15 +979,17 @@ export const Bot = (botProps: BotProps & { class?: string }) => {
               />
             )}
           </div>
-          <Badge
-            footer={props.footer}
-            badgeBackgroundColor={props.badgeBackgroundColor}
-            poweredByTextColor={props.poweredByTextColor}
-            botContainer={botContainer}
-          />
+          <Badge badgeBackgroundColor={props.badgeBackgroundColor} poweredByTextColor={props.poweredByTextColor} botContainer={botContainer} />
         </div>
       </div>
       {sourcePopupOpen() && <Popup isOpen={sourcePopupOpen()} value={sourcePopupSrc()} onClose={() => setSourcePopupOpen(false)} />}
     </>
   );
 };
+
+// type BottomSpacerProps = {
+//   ref: HTMLDivElement | undefined;
+// };
+// const BottomSpacer = (props: BottomSpacerProps) => {
+//   return <div ref={props.ref} class="w-full h-32" />;
+// };
