@@ -14,6 +14,10 @@ export type TextInputTheme = {
     maxChars?: number;
     maxCharsWarningMessage?: string;
     autoFocus?: boolean;
+    sendMessageSound?: boolean;
+    sendSoundLocation?: string;
+    receiveMessageSound?: boolean;
+    receiveSoundLocation?: string;
 };
 export type UserMessageTheme = {
     backgroundColor?: string;
@@ -39,6 +43,7 @@ export type FeedbackTheme = {
 };
 export type ChatWindowTheme = {
     showTitle?: boolean;
+    showAgentMessages?: boolean;
     title?: string;
     titleAvatarSrc?: string;
     welcomeMessage?: string;

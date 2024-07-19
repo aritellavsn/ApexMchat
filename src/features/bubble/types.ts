@@ -16,6 +16,10 @@ export type TextInputTheme = {
   maxChars?: number;
   maxCharsWarningMessage?: string;
   autoFocus?: boolean;
+  sendMessageSound?: boolean;
+  sendSoundLocation?: string;
+  receiveMessageSound?: boolean;
+  receiveSoundLocation?: string;
 };
 
 export type UserMessageTheme = {
@@ -46,6 +50,7 @@ export type FeedbackTheme = {
 
 export type ChatWindowTheme = {
   showTitle?: boolean;
+  showAgentMessages?: boolean; // parameter to show agent reasonings when using agentflows
   title?: string;
   titleAvatarSrc?: string;
   welcomeMessage?: string;
@@ -71,6 +76,7 @@ export type ButtonTheme = {
   right?: number;
   dragAndDrop?: boolean; // parameter to enable drag and drop(true or false)
 };
+
 export type ToolTipTheme = {
   showTooltip?: boolean; // parameter to enable tooltip(true or false)
   tooltipMessage?: string;
