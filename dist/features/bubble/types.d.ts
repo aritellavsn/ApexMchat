@@ -49,6 +49,7 @@ export type ChatWindowTheme = {
     welcomeMessage?: string;
     errorMessage?: string;
     backgroundColor?: string;
+    backgroundImage?: string;
     height?: number;
     width?: number;
     fontSize?: number;
@@ -58,6 +59,8 @@ export type ChatWindowTheme = {
     feedback?: FeedbackTheme;
     footer?: FooterTheme;
     poweredByTextColor?: string;
+    starterPrompts?: string[];
+    starterPromptFontSize?: number;
 };
 export type ButtonTheme = {
     size?: 'small' | 'medium' | 'large' | number;
@@ -67,6 +70,7 @@ export type ButtonTheme = {
     bottom?: number;
     right?: number;
     dragAndDrop?: boolean;
+    autoWindowOpen?: autoWindowOpenTheme;
 };
 export type ToolTipTheme = {
     showTooltip?: boolean;
@@ -74,5 +78,10 @@ export type ToolTipTheme = {
     tooltipBackgroundColor?: string;
     tooltipTextColor?: string;
     tooltipFontSize?: number;
+};
+export type autoWindowOpenTheme = {
+    autoOpen?: boolean;
+    openDelay?: number;
+    autoOpenOnMobile?: boolean;
 };
 //# sourceMappingURL=types.d.ts.map
